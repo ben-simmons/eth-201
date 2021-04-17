@@ -96,7 +96,14 @@ contract Token {
    * @param _value The amount of token to be transferred.
    */
   function transfer(address payable _to, uint256 _value) public returns (bool _success){
-
+    require(balances[msg.sender] >= _value, "Value exceeds balance");
+    
+    balances[msg.sender] -= _value;
+    balances[_to] += _value;
+    
+    emit Transfer(msg.sender, _to, _value);
+    
+    return true;
   }
 
   /*
@@ -106,7 +113,11 @@ contract Token {
    * @param _value The amount of tokens to be approved for transfer.
    */
   function approve(address _spender,uint256 _value) public returns (bool _success) {
-
+    allowed[msg.sender][_spender] = _value;
+    
+    emit Approval(msg.sender, _spender, _value);
+    
+    return true;
   }
 
   /*
@@ -126,7 +137,16 @@ contract Token {
    * @param _value The amount of token to be transferred.
    */
   function transferFrom(address _from,address _to,uint256 _value) public returns (bool _success){
-
+    require(allowed[_from][msg.sender] >= _value, "Value exceeds allowance");
+    require(balances[_from] >= _value, "Value exceeds balance");
+    
+    balances[_from] -= _value;
+    balances[_to] += _value;
+    allowed[_from][msg.sender] -= _value;
+    
+    emit Transfer(_from, _to, _value);
+    
+    return true;
   }
 
 }
