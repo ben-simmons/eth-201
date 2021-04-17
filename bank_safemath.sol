@@ -1,8 +1,11 @@
 pragma solidity 0.8.0;
 pragma abicoder v2;
 import "./ownable.sol";
+import "./safemath.sol";
 
 contract Bank is Ownable {
+    
+    using SafeMath for uint;
     
     mapping(address => uint) balance;
     address[] customers;
@@ -10,14 +13,14 @@ contract Bank is Ownable {
     event depositDone(uint amount, address indexed depositedTo);
     
     function deposit() public payable returns (uint)  {
-        balance[msg.sender] += msg.value;
+        balance[msg.sender] = balance[msg.sender].add(msg.value);
         emit depositDone(msg.value, msg.sender);
         return balance[msg.sender];
     }
     
     function withdraw(uint amount) public onlyOwner returns (uint){
         require(balance[msg.sender] >= amount);
-        balance[msg.sender] -= amount;
+        balance[msg.sender] = balance[msg.sender].sub(amount);
         payable(msg.sender).transfer(amount);
         return balance[msg.sender];
     }
@@ -38,8 +41,8 @@ contract Bank is Ownable {
     }
     
     function _transfer(address from, address to, uint amount) private {
-        balance[from] -= amount;
-        balance[to] += amount;
+        balance[from] = balance[from].sub(amount);
+        balance[to] = balance[to].add(amount);
     }
     
 }
