@@ -21,6 +21,7 @@ contract KittyContract {
         uint32 mumId;
         uint32 dadId;
         uint16 generation;
+        uint ownerPointer;
     }
 
     Kitty[] kitties;
@@ -28,7 +29,7 @@ contract KittyContract {
     mapping (uint256 => address) public kittyIndexToOwner;
     mapping (address => uint256) ownershipTokenCount;
 
-    
+    mapping (address => uint[]) kittyOwnerToIndices;
 
     function balanceOf(address owner) external view returns (uint256 balance){
         return ownershipTokenCount[owner];
@@ -53,15 +54,7 @@ contract KittyContract {
     }
     
     function getAllCatsFor(address _owner) external view returns (uint[] memory cats){
-        uint[] memory result = new uint[](ownershipTokenCount[_owner]);
-        uint counter = 0;
-        for (uint i = 0; i < kitties.length; i++) {
-            if (kittyIndexToOwner[i] == _owner) {
-                result[counter] = i;
-                counter++;
-            }
-        }
-        return result;
+        return kittyOwnerToIndices[_owner];
     }
     
     function createKittyGen0(uint256 _genes) public returns (uint256) {
@@ -80,7 +73,8 @@ contract KittyContract {
             birthTime: uint64(block.timestamp),
             mumId: uint32(_mumId),
             dadId: uint32(_dadId),
-            generation: uint16(_generation)
+            generation: uint16(_generation),
+            ownerPointer: 0
         });
         
         kitties.push(_kitty);
@@ -102,7 +96,17 @@ contract KittyContract {
 
         if (_from != address(0)) {
             ownershipTokenCount[_from]--;
+            
+            // Update the _from ownership mapping
+            uint rowToDelete = kitties[_tokenId].ownerPointer;
+            uint keyToMove = kittyOwnerToIndices[_from][kittyOwnerToIndices[_from].length - 1];
+            kittyOwnerToIndices[_from][rowToDelete] = keyToMove;
+            kittyOwnerToIndices[_from].pop();
         }
+        
+        // Update the _to ownership mapping
+        kittyOwnerToIndices[_to].push(_tokenId);
+        kitties[_tokenId].ownerPointer = kittyOwnerToIndices[_to].length - 1;
 
         // Emit the transfer event.
         emit Transfer(_from, _to, _tokenId);
